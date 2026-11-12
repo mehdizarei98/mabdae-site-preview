@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" preserveAspectRatio="xMidYMid slice">
+<rect width="1200" height="800" fill="#10291F"/>
+<g fill="#16362A"><rect x="40" y="60" width="210" height="140"/><rect x="290" y="40" width="160" height="190"/><rect x="500" y="70" width="240" height="120"/><rect x="790" y="40" width="170" height="170"/><rect x="1000" y="80" width="160" height="130"/><rect x="60" y="260" width="150" height="190"/><rect x="250" y="280" width="220" height="150"/><rect x="520" y="250" width="130" height="200"/><rect x="700" y="270" width="250" height="160"/><rect x="1000" y="260" width="170" height="190"/><rect x="50" y="520" width="240" height="210"/><rect x="340" y="500" width="170" height="130"/><rect x="560" y="520" width="200" height="220"/><rect x="810" y="500" width="150" height="230"/><rect x="1010" y="520" width="150" height="200"/></g>
+<g fill="#1B4636"><rect x="700" y="270" width="250" height="160"/><rect x="340" y="660" width="170" height="70"/></g>
+<g stroke="#2A5A47" stroke-width="2" fill="none"><path d="M0 235 H1200"/><path d="M0 470 H1200"/><path d="M270 0 V800"/><path d="M475 0 V800"/><path d="M975 0 V800"/><path d="M0 760 C300 700 600 780 1200 690"/></g>
+<g stroke="#3E7A63" stroke-width="7" fill="none" stroke-linecap="round"><path d="M0 420 C250 380 450 520 700 460 S1000 380 1200 430"/><path d="M740 0 C720 200 760 400 740 800"/></g>
+<g fill="#D7E86A"><circle cx="745" cy="360" r="44" fill-opacity=".18"/><circle cx="745" cy="360" r="22" fill-opacity=".35"/><path d="M745 322c-17 0-30 13-30 30 0 22 30 50 30 50s30-28 30-50c0-17-13-30-30-30z"/></g>
+<circle cx="745" cy="352" r="11" fill="#0D241C"/>
+</svg>
