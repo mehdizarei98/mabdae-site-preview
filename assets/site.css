@@ -1183,8 +1183,9 @@ body:has(#mega-menu:not([hidden])) .nav { background: var(--ink-a94); }
 }
 .docset-chips {
   display: flex;
-  flex-wrap: nowrap;
-  overflow-x: auto;
+  flex-wrap: wrap;
+  flex: none;
+  overflow: visible;
   gap: var(--sp-8);
 }
 .chip {
@@ -1473,7 +1474,7 @@ button.chip:active,
 /* On dark grounds: a cream plate separates the icon (owner rule; the only circle exception besides existing ones). */
 .icon3d-plate { box-sizing: border-box; padding: var(--sp-8); background: var(--paper-3); border-radius: 50%; }
 
-.docset-chips .chip { flex: none; }
+.docset-chips .chip { flex: none; max-inline-size: 100%; white-space: normal; overflow-wrap: anywhere; }
 
 .chip-neutral[aria-pressed="true"] { background: var(--fg-1); color: var(--ink); border-color: var(--fg-1); }
 
@@ -1975,7 +1976,7 @@ html.has-overlay, body.has-overlay { overflow: hidden; }
   max-width: 100%;
   height: 100%;
   padding: var(--sp-32);
-  overflow: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: var(--sp-16);
@@ -2313,6 +2314,15 @@ a.row2:hover, button.row2:hover, .row2[data-go]:hover {
 }
 
 /* ---------- documents drawer ---------- */
+.drawer .panel > .row2 { flex: none; }
+.drawer-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-16);
+  min-block-size: 0;
+  overflow-y: auto;
+}
+.drawer-body > * { flex: none; }
 .drawer .sheet-grab { background: var(--text-a24); }
 .drawer .panel .muted { color: var(--fg-2); }
 .drawer .panel .chip { background: transparent; color: var(--fg-1); border-color: var(--field-ink); }
@@ -2630,6 +2640,7 @@ a.row2:hover, button.row2:hover, .row2[data-go]:hover {
   body:has(#drawer-dialog:not([hidden])) main { display: none !important; }
   body:has(#drawer-dialog:not([hidden])) #drawer-dialog { display: block !important; position: static; background: var(--white); }
   #drawer-dialog:not([hidden]) .panel { position: static; max-height: none; width: auto; overflow: visible; background: var(--white); color: var(--black); }
+  #drawer-dialog:not([hidden]) .drawer-body { overflow: visible; }
   #drawer-dialog:not([hidden]) .ck, #drawer-dialog:not([hidden]) .ck .t { color: var(--black); border-color: var(--black); }
   #drawer-dialog:not([hidden]) .ck .bx { border-color: var(--black); background: none; }
   #drawer-dialog:not([hidden]) .ck:has(input:checked) .bx { color: var(--black); }

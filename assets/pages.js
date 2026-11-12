@@ -210,10 +210,11 @@
   // Swipe down from the top of the sheet closes it on phones (same as the menu and search sheets).
   function initDrawerSwipe() {
     var panel = drawer && drawer.querySelector('.panel');
+    var body = panel && panel.querySelector('.drawer-body');
     var from = null;
-    if (!panel) return;
+    if (!panel || !body) return;
     panel.addEventListener('touchstart', function (e) {
-      from = panel.scrollTop <= 0 ? e.touches[0].clientY : null;
+      from = body.scrollTop <= 0 ? e.touches[0].clientY : null;
     }, { passive: true });
     panel.addEventListener('touchend', function (e) {
       var dy = from === null ? 0 : e.changedTouches[0].clientY - from;
