@@ -4012,8 +4012,17 @@ aside.art-toc { display: none; }
     line-height: var(--lh-body);
   }
 }
+.faces-step { display: none; }
 @media (max-width: 767.98px) {
   .face:not([aria-pressed="true"]) { display: none; }
+  /* One full-screen portrait between the top bar and the bottom bar; arrows + swipe change lawyer. */
+  .lawyers { position: relative; }
+  .faces { gap: 0; padding-inline: 0; }
+  .face[aria-pressed="true"] { flex: none; aspect-ratio: auto; width: 100%; height: calc(100svh - var(--topbar-h) - var(--bar-h)); touch-action: pan-y; }
+  .face[aria-pressed="true"] .fi { padding-inline: var(--sp-64); padding-block-end: var(--sp-32); }
+  .faces-step { position: absolute; inset-block-start: 40%; z-index: 2; display: grid; place-items: center; inline-size: var(--sp-48); block-size: var(--sp-48); padding: 0; background: var(--ink-a50); border: 1px solid var(--border-subtle); color: var(--fg-1); cursor: pointer; }
+  .faces-prev { inset-inline-start: var(--sp-8); }
+  .faces-next { inset-inline-end: var(--sp-8); }
 }
 @media (min-width: 768px) and (max-width: 1023.98px) {
   .faces {

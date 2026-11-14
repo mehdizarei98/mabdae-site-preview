@@ -232,6 +232,15 @@
         select(index, true);
       }, false);
     });
+    function step(dir) { select((current + dir + faces.length) % faces.length, false); } /* arrows + swipe on phones; RTL: swipe right = next */
+    qa('[data-lawyer-step]').forEach(function (b) { b.addEventListener('click', function () { step(parseInt(attr(b, 'data-lawyer-step'), 10)); }, false); });
+    var box = $('.faces'), sx = 0, sy = 0;
+    if (box) {
+      box.addEventListener('touchstart', function (ev) { sx = ev.touches[0].clientX; sy = ev.touches[0].clientY; }, { passive: true });
+      box.addEventListener('touchend', function (ev) {
+        var dx = ev.changedTouches[0].clientX - sx, dy = ev.changedTouches[0].clientY - sy; if (window.matchMedia('(max-width: 767.98px)').matches && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) step(dx > 0 ? 1 : -1);
+      }, { passive: true });
+    }
     qa('[data-switch-lawyer]').forEach(function (button) {
       button.addEventListener('click', function () {
         select(parseInt(attr(button, 'data-switch-lawyer'), 10) - 1, false);
