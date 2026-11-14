@@ -378,10 +378,13 @@ i { font-style: normal; }
 }
 
 *::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
-*::-webkit-scrollbar-thumb { background: var(--text-a16); }
+*::-webkit-scrollbar-thumb { background: var(--text-a16); border-radius: 2px; }
+/* Horizontal strips scroll by touch/drag only; no visible bar. */
+.tabbar, .tp-tabs { scrollbar-width: none; }
+.tabbar::-webkit-scrollbar, .tp-tabs::-webkit-scrollbar { display: none; }
 *::-webkit-scrollbar-track { background: transparent; }
 
 @media (prefers-reduced-motion: reduce) {
