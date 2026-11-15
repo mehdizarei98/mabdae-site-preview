@@ -3559,6 +3559,7 @@ a.news-row:hover { background: var(--text-a4); }
 .news-list { display: flex; flex-direction: column; margin: var(--sp-16) 0 0; padding: 0; list-style: none; border-block-start: 1px solid var(--border-subtle); }
 .news-row { display: grid; grid-template-columns: var(--sp-80) minmax(0, 1fr) var(--sp-20); align-items: center; gap: var(--sp-12); min-height: var(--sp-80); padding-block: var(--sp-8); border-block-end: 1px solid var(--border-subtle); }
 .news-meta { color: var(--fg-3); font-size: var(--fs-small); line-height: var(--lh-small); }
+.news-src { display: block; width: var(--sp-20); height: var(--sp-20); margin-block-end: var(--sp-4); border-radius: 50%; }
 .news-row b { font-size: var(--fs-body); line-height: var(--lh-small); }
 .news-row .ic { color: var(--fg-3); }
 @media (max-width: 767.98px) {
