@@ -104,7 +104,7 @@
         history.replaceState(null, '', '#' + attr(tabs[index], 'data-paper-id'));
       } catch (err) { /* some file:// contexts refuse; the tab still works */ }
       tabs[index].focus();
-      if (tabs[index].scrollIntoView) tabs[index].scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      if (tabs[index].scrollIntoView) tabs[index].scrollIntoView(window.matchMedia('(max-width: 767.98px)').matches ? { block: 'start', behavior: reduced() ? 'auto' : 'smooth' } : { block: 'nearest', inline: 'nearest' });
     }
 
     tabs.forEach(function (tab, i) {
@@ -417,22 +417,13 @@
       return list;
     });
 
-    function gapCount(indexes, onlyAnswered) {
+    function gapCount(indexes) {
       var gap = 0;
       indexes.forEach(function (qi) {
         var answer = answers[qi];
-        if (onlyAnswered && !answer) return;
         if (answer !== 'yes') gap += 1;
       });
       return gap;
-    }
-
-    function answeredCount(indexes) {
-      var count = 0;
-      indexes.forEach(function (qi) {
-        if (answers[qi]) count += 1;
-      });
-      return count;
     }
 
     function drawSummary(done) {
@@ -441,16 +432,6 @@
       var now = !done && questions[index] ? questions[index].cat : '';
       cats.forEach(function (cat, ci) {
         if (rows[ci]) rows[ci].classList.toggle('is-current', cat.name === now);
-        var badge = rows[ci] ? $('.badge', rows[ci]) : null;
-        if (!badge) return;
-        var total = catIndexes[ci].length;
-        var ans = answeredCount(catIndexes[ci]);
-        var gap = gapCount(catIndexes[ci], true);
-        var text;
-        if (ans === 0) text = ui('quiz.unanswered');
-        else if (done || ans === total) text = gap ? fill(ui('quiz.gaps'), { n: fa(gap) }) : ui('quiz.allClear');
-        else text = fill(ui('quiz.answered'), { n: fa(ans), total: fa(total) });
-        setText(badge, text);
       });
     }
 
@@ -484,7 +465,7 @@
       }
       clearChildren(resultBody);
       cats.forEach(function (cat, ci) {
-        resultBody.appendChild(resultBlock(cat, gapCount(catIndexes[ci], false)));
+        resultBody.appendChild(resultBlock(cat, gapCount(catIndexes[ci])));
       });
       show(result);
       try {

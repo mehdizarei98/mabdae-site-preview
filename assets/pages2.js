@@ -222,8 +222,8 @@
         break;
       }
     }
-    var hash = !named && window.location.hash.match(/^#lawyer-([1-5])$/);
-    if (hash) start = Number(hash[1]) - 1;
+    var hash = !named && window.location.hash.match(/^#lawyer-([1-9]\d*)$/);
+    if (hash && Number(hash[1]) <= faces.length) start = Number(hash[1]) - 1;
     paint(start);
 
     faces.forEach(function (face) {

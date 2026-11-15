@@ -165,6 +165,7 @@
     else if (event.key === 'End') { event.preventDefault(); selectTab(tabs.length - 1, true); return; }
     else return;
     event.preventDefault();
+    if (document.documentElement.dir === 'ltr') step = -step;
     selectTab((current + step + tabs.length) % tabs.length, true);
   }
 
@@ -207,6 +208,7 @@
     for (var i = 0; i < index.length; i += 1) {
       var entry = index[i];
       if (!entry || !entry.title || !entry.url) continue;
+      if (entry.url.startsWith('en/') !== (document.documentElement.lang === 'en')) continue;
       var value = score(entry, needle);
       if (value > 0) scored.push({ entry: entry, value: value, order: i });
     }
@@ -256,7 +258,7 @@
 
     var found = find(needle);
     var countTemplate = M.ui('overlays.searchCount');
-    var countText = countTemplate ? M.fill(countTemplate, { n: M.digits.toFa(found.length) }) : '';
+    var countText = countTemplate ? M.fill(countTemplate, { n: document.documentElement.lang === 'en' ? found.length : M.digits.toFa(found.length) }) : '';
     announce(countText);
     if (countText) searchResults.appendChild(paragraph(countText, 'search-count'));
 
@@ -362,7 +364,9 @@
     var btn = event.target.closest ? event.target.closest('.nav [data-open-mega]') : null;
     if (!btn || (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight')) return false;
     var list = qa('.nav [data-open-mega]');
-    var next = list[(list.indexOf(btn) + (event.key === 'ArrowLeft' ? 1 : -1) + list.length) % list.length];
+    var step = event.key === 'ArrowLeft' ? 1 : -1;
+    if (document.documentElement.dir === 'ltr') step = -step;
+    var next = list[(list.indexOf(btn) + step + list.length) % list.length];
     event.preventDefault();
     next.focus();
     return true;
