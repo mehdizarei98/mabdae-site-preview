@@ -535,10 +535,29 @@
 
   window.addEventListener('popstate', onPopState);
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initHeaderScroll);
-  } else {
+  /* Owner's notice: shown only between data-start and data-end (YYYY-MM-DD) and until dismissed in this tab. */
+  function initNotice() {
+    var box = $('[data-notice]');
+    if (!box) return;
+    var d = new Date(), pad = function (n) { return (n < 10 ? '0' : '') + n; };
+    var today = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    var start = attr(box, 'data-start'), end = attr(box, 'data-end'), key = attr(box, 'data-key');
+    box.hidden = Boolean((start && today < start) || (end && today > end) || store.get('mabda-notice') === key);
+    $('[data-notice-close]', box).addEventListener('click', function () {
+      box.hidden = true;
+      store.set('mabda-notice', key);
+    });
+  }
+
+  function initPage() {
     initHeaderScroll();
+    initNotice();
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initPage);
+  } else {
+    initPage();
   }
 
   window.Mabda = {
