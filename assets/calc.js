@@ -216,6 +216,8 @@
   }
   function d2h(day) {
     var y = div(30 * (day - g2d(622, 7, 19)) + 10646, 10631), m = 1;
+    while (y > 1 && h2d(y, 1, 1) > day) y -= 1;
+    while (h2d(y + 1, 1, 1) <= day) y += 1;
     while (m < 12 && h2d(y, m + 1, 1) <= day) m += 1;
     return { y: y, m: m, d: day - h2d(y, m, 1) + 1 };
   }
@@ -255,12 +257,13 @@
     var end = addDaysJalali(y, m, d, days);
     var g = end && jalaliToGregorian(end.jy, end.jm, end.jd);
     if (!g || typeof summary !== 'string') return null;
+    var encoder = new TextEncoder();
     function compact(date) { return String(date.gy).padStart(4, '0') + String(date.gm).padStart(2, '0') + String(date.gd).padStart(2, '0'); }
     function escape(text) { return text.replace(/\\/g, '\\\\').replace(/\r\n|\r|\n/g, '\\n').replace(/[,;]/g, '\\$&'); }
     function fold(line) {
       var size = 0, out = '';
       Array.from(line).forEach(function (char) {
-        var bytes = new TextEncoder().encode(char).length;
+        var bytes = encoder.encode(char).length;
         if (size + bytes > 75) { out += '\r\n '; size = 1; }
         out += char; size += bytes;
       });

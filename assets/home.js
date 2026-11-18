@@ -43,14 +43,9 @@
     if (direction < 0 && Math.abs(window.scrollY - top) <= 2) return 0;
     return null;
   }
-  // Match cubic-bezier(.22, 1, .36, 1), used by the site's hero entrances.
-  function ease(progress) {
-    var t = progress;
-    for (var i = 0; i < 6; i++) {
-      var x = .66 * t - .24 * t * t + .58 * t * t * t;
-      t -= (x - progress) / (.66 - .48 * t + 1.74 * t * t);
-    }
-    return 1 - Math.pow(1 - t, 3);
+  // Smooth zero-initial-jerk S-curve glide.
+  function ease(p) {
+    return 0.5 - 0.5 * Math.cos(Math.PI * Math.pow(p, 0.82));
   }
   function go(top) {
     var from = window.scrollY, started = performance.now();

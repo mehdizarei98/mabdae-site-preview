@@ -14,9 +14,9 @@
   let zoom = Math.max(config.minZoom, Math.min(config.maxZoom, config.zoom));
   const point = { x: (config.lng + 180) / 360, y: (1 - Math.asinh(Math.tan(lat * Math.PI / 180)) / Math.PI) / 2 };
   const center = { ...point }, pointers = new Map();
-  let lastDistance = 0;
+  let lastDistance = 0, loaded = false;
   credit.textContent = provider.attribution;
-  view.hidden = controls.hidden = activate.hidden = false;
+  activate.hidden = false;
   function draw() {
     const world = tileSize * 2 ** zoom, width = view.clientWidth, height = view.clientHeight;
     const left = center.x * world - width / 2, top = center.y * world - height / 2;
@@ -50,6 +50,7 @@
   activate.addEventListener('click', () => {
     const active = activate.getAttribute('aria-pressed') !== 'true';
     activate.setAttribute('aria-pressed', String(active)); map.classList.toggle('is-active', active);
+    if (active && !loaded) { loaded = true; view.hidden = controls.hidden = false; new ResizeObserver(draw).observe(view); draw(); }
   });
   view.addEventListener('wheel', e => { if (e.ctrlKey) { e.preventDefault(); changeZoom(e.deltaY < 0 ? 1 : -1); } }, { passive: false });
   view.addEventListener('keydown', e => {
@@ -73,6 +74,4 @@
   });
   function release(e) { pointers.delete(e.pointerId); lastDistance = 0; }
   view.addEventListener('pointerup', release); view.addEventListener('pointercancel', release);
-  new ResizeObserver(draw).observe(view);
-  draw();
 })();

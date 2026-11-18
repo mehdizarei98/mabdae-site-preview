@@ -1,27 +1,6 @@
 /*
  * common.js — shared helpers used by nav.js / pages.js.
  * Classic script, no modules. Exposes one global: window.Mabda
- *
- * API
- *   Mabda.$(sel, root) / Mabda.qa(sel, root)      query helpers
- *   Mabda.ui(path)                                text from window.SITE_DATA.ui ("overlays.close")
- *   Mabda.fill(template, map)                     "{n} مورد" -> "۵ مورد"
- *   Mabda.digits.toLatin(s) / .toFa(s) / .group(n) Persian digit helpers
- *   Mabda.store.get(k, fb) / .set(k, v) / .del(k) sessionStorage wrapped in
- *       try/catch, plus .getJson / .setJson (falls back to an in-memory map)
- *   Mabda.toast(message, ms)                      writes #toast (role=status live region)
- *   Mabda.focusables(root) / Mabda.trap(container) tab focus trap
- *   Mabda.overlay.open(el, opts) / .close(el) / .isOpen(el) / .closeTopmost()
- *       dialog machinery: hidden attr, background inert + aria-hidden, scroll lock,
- *       focus move/trap/restore and a history state so the system Back closes overlays.
- *   Mabda.setInert(el, on)                         inert + aria-hidden on one node
- *
- * Opening/closing an overlay fires the non-bubbling custom events "mabda:open" and
- * "mabda:close" on the overlay element, so triggers can sync aria-expanded.
- *
- * Markup conventions (already rendered by the Python templates):
- *   [data-autofocus] inside an overlay gets focus first when it opens.
- *   html/body class "has-overlay" while a modal overlay is open (CSS scroll lock).
  */
 (function () {
   'use strict';
@@ -40,18 +19,15 @@
   var historyWorks = true;
   var pendingOpener = null;
   var toastTimer = null;
-
   function $(selector, root) {
     if (!root) root = document;
     return root.querySelector ? root.querySelector(selector) : null;
   }
-
   function qa(selector, root) {
     if (!root) root = document;
     var list = root.querySelectorAll ? root.querySelectorAll(selector) : [];
     return Array.prototype.slice.call(list);
   }
-
   function attr(el, name) {
     return el && el.getAttribute ? el.getAttribute(name) : null;
   }
@@ -505,13 +481,8 @@
     return close(record.el, { restore: true });
   }
 
-  function topmostId() {
-    return stack.length ? stack[stack.length - 1] : null;
-  }
-
-  function isOpenId(id) {
-    return stack.indexOf(id) !== -1;
-  }
+  function topmostId() { return stack.length ? stack[stack.length - 1] : null; }
+  function isOpenId(id) { return stack.indexOf(id) !== -1; }
 
   /* ---------- header solid-on-scroll ---------- */
 
@@ -543,49 +514,73 @@
     var today = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
     var start = attr(box, 'data-start'), end = attr(box, 'data-end'), key = attr(box, 'data-key');
     box.hidden = Boolean((start && today < start) || (end && today > end) || store.get('mabda-notice') === key);
+    function sizeNotice() {
+      var root = document.documentElement, height = box.getBoundingClientRect().height + 'px';
+      if (root.style.getPropertyValue('--notice-h') === height) return;
+      root.style.setProperty('--notice-h', height);
+      window.dispatchEvent(new Event('resize'));
+    }
+    sizeNotice();
+    if (window.ResizeObserver) new ResizeObserver(sizeNotice).observe(box);
+    else window.addEventListener('resize', sizeNotice);
     $('[data-notice-close]', box).addEventListener('click', function () {
       box.hidden = true;
+      sizeNotice();
       store.set('mabda-notice', key);
     });
   }
 
-  function initPage() {
-    initHeaderScroll();
-    initNotice();
+  function initReveal() {
+    if (typeof window.IntersectionObserver !== 'function') return;
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var targets = qa('[data-reveal], .acard, .tile2, .pc, .nc, .news-row, .irow, .ab-pillars li, .ab-team li, .ac, .ct-steps li, .lw-sec, .lw-actions, .keypoints, .callout, .tp-situation');
+    if (!targets.length) return;
+    var skip = '#home-choices, .topics-wrap.is-hscroll, .overlay, #mega-menu, .site-footer, [hidden]';
+    var fold = (window.innerHeight || 800) * 0.95, below = [];
+    targets.forEach(function (el) {
+      if (!el || (el.closest && el.closest(skip))) return;
+      if (el.parentElement && el.parentElement.closest && el.parentElement.closest('[data-reveal]')) return;
+      if (el.getBoundingClientRect().top > fold) {
+        el.setAttribute('data-reveal', '');
+        below.push(el);
+      } else if (el.hasAttribute('data-reveal')) {
+        el.classList.add('is-revealed');
+      }
+    });
+    if (!below.length) return;
+    document.documentElement.classList.add('js-reveal');
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting || entry.boundingClientRect.top <= (window.innerHeight || 800)) {
+          entry.target.classList.add('is-revealed');
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: '0px 0px -24px 0px', threshold: 0.05 });
+    below.forEach(function (el) { obs.observe(el); });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initPage);
-  } else {
-    initPage();
+  function initPage() {
+    initNotice();
+    initHeaderScroll();
+    initReveal();
+    if ($('.notfound') && /^https?:$/.test(location.protocol) && location.pathname.split('/').length > 2) {
+      qa('link[href], a[href], img[src]').forEach(function (el) {
+        var k = el.hasAttribute('src') ? 'src' : 'href', v = attr(el, k);
+        if (v && !/^(https?:|mailto:|tel:|data:|#|\/)/.test(v)) el.setAttribute(k, location.origin + '/' + v.replace(/^(\.\/)+/, ''));
+      });
+    }
   }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPage);
+  else initPage();
 
   window.Mabda = {
-    $: $,
-    $$: qa,
-    qa: qa,
-    attr: attr,
-    ui: ui,
-    fill: fill,
+    $: $, $$: qa, qa: qa, attr: attr, ui: ui, fill: fill,
     digits: { toLatin: toLatin, toFa: toFa, group: group },
-    normalizeDigits: toLatin,
-    faDigits: toFa,
-    formatNumber: group,
-    store: store,
-    toast: toast,
-    toastFor: toastFor,
-    isRendered: isRendered,
-    focusables: focusables,
-    focusFirst: focusFirst,
-    trap: trap,
-    setInert: setInert,
-    overlay: {
-      open: open,
-      close: close,
-      isOpen: isOpen,
-      closeTopmost: closeTopmost,
-      topmostId: topmostId,
-      isOpenId: isOpenId
-    }
+    normalizeDigits: toLatin, faDigits: toFa, formatNumber: group,
+    store: store, toast: toast, toastFor: toastFor,
+    isRendered: isRendered, focusables: focusables, focusFirst: focusFirst, trap: trap, setInert: setInert,
+    overlay: { open: open, close: close, isOpen: isOpen, closeTopmost: closeTopmost, topmostId: topmostId, isOpenId: isOpenId }
   };
 })();

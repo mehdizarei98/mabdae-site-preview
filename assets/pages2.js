@@ -19,23 +19,18 @@
   var attr = M.attr;
 
   var SEPARATOR = ' · ';
-
   function fa(value) {
     return M.digits.toFa(String(value));
   }
-
   function pad2(value) {
     return (value < 10 ? '0' : '') + value;
   }
-
   function setText(el, text) {
     if (el) el.textContent = text === null || text === undefined ? '' : String(text);
   }
-
   function show(el) {
     if (el) el.removeAttribute('hidden');
   }
-
   function hide(el) {
     if (el) el.setAttribute('hidden', '');
   }
@@ -179,7 +174,7 @@
       panels.forEach(function (panel, i) {
         if (i === index) show(panel); else hide(panel);
         var heading = named ? $('[id^="lawyer-name-"]', panel) : null;
-        var tag = i === index ? 'H1' : 'H2';
+        var tag = i === index ? 'H1' : 'H2', subTag = i === index ? 'H2' : 'H3';
         if (heading && heading.tagName !== tag) {
           var replacement = document.createElement(tag);
           replacement.className = heading.className;
@@ -188,6 +183,12 @@
           replacement.textContent = heading.textContent;
           heading.replaceWith(replacement);
         }
+        if (named) qa('.lw-sec > h2, .lw-sec > h3', panel).forEach(function (sub) {
+          if (sub.tagName === subTag) return;
+          var nextSub = document.createElement(subTag);
+          nextSub.className = sub.className; nextSub.textContent = sub.textContent;
+          sub.replaceWith(nextSub);
+        });
       });
       var tab = $('[data-switch-lawyer="' + (index + 1) + '"]', panels[index]);
       if (tab) {
@@ -217,20 +218,26 @@
 
     var start = 0;
     for (var i = 0; i < faces.length; i += 1) {
-      if (faces[i].getAttribute('aria-pressed') === 'true' || faces[i].classList.contains('on')) {
-        start = i;
-        break;
-      }
+      if (faces[i].getAttribute('aria-pressed') === 'true' || faces[i].classList.contains('on')) { start = i; break; }
     }
-    var hash = !named && window.location.hash.match(/^#lawyer-([1-9]\d*)$/);
-    if (hash && Number(hash[1]) <= faces.length) start = Number(hash[1]) - 1;
+    function hashLawyer() {
+      if (named || !window.location.hash) return -1;
+      var raw = window.location.hash.slice(1);
+      var byId = panels.findIndex(function (p) { return p.id === raw; });
+      if (byId >= 0) return byId;
+      var m = raw.match(/^lawyer-([1-9]\d*)$/);
+      return m && Number(m[1]) <= faces.length ? Number(m[1]) - 1 : -1;
+    }
+    var initial = hashLawyer();
+    if (initial >= 0) start = initial;
     paint(start);
-
+    window.addEventListener('hashchange', function () {
+      var target = hashLawyer();
+      if (target >= 0) paint(target);
+    });
     faces.forEach(function (face) {
       var index = indexFrom(face);
-      face.addEventListener('click', function () {
-        select(index, true);
-      }, false);
+      face.addEventListener('click', function () { select(index, true); }, false);
     });
     function step(dir) { select((current + dir + faces.length) % faces.length, false); } /* arrows + swipe on phones; RTL: swipe right = next */
     qa('[data-lawyer-step]').forEach(function (b) { b.addEventListener('click', function () { step(parseInt(attr(b, 'data-lawyer-step'), 10)); }, false); });
@@ -238,7 +245,7 @@
     if (box) {
       box.addEventListener('touchstart', function (ev) { sx = ev.touches[0].clientX; sy = ev.touches[0].clientY; }, { passive: true });
       box.addEventListener('touchend', function (ev) {
-        var dx = ev.changedTouches[0].clientX - sx, dy = ev.changedTouches[0].clientY - sy; if (window.matchMedia('(max-width: 767.98px)').matches && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) step(dx > 0 ? 1 : -1);
+        var dx = ev.changedTouches[0].clientX - sx, dy = ev.changedTouches[0].clientY - sy; if (window.matchMedia('(max-width: 767.98px)').matches && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) step((dx > 0 ? 1 : -1) * (document.documentElement.dir === 'ltr' ? -1 : 1));
       }, { passive: true });
     }
     qa('[data-switch-lawyer]').forEach(function (button) {
@@ -311,10 +318,7 @@
 
   /* ---------- calculators ---------- */
 
-  function message(key, fallback) {
-    var text = ui(key);
-    return text ? text : (fallback || '');
-  }
+  function message(key, fallback) { return ui(key) || fallback || ''; }
 
   function errorBox(input) {
     var ids = String(attr(input, 'aria-describedby') || '').split(/\s+/);
@@ -331,89 +335,57 @@
     if (text) {
       input.setAttribute('aria-invalid', 'true');
       input.classList.add('err');
-      if (box) {
-        setText(box, text);
-        show(box);
-      }
+      if (box) { setText(box, text); show(box); }
     } else {
       input.removeAttribute('aria-invalid');
       input.classList.remove('err');
-      if (box) {
-        setText(box, '');
-        hide(box);
-      }
+      if (box) { setText(box, ''); hide(box); }
     }
   }
 
-  function formErrorNode(form) {
-    return $('[data-form-error]', form);
-  }
+  function formErrorNode(form) { return $('[data-form-error]', form); }
 
   function clearErrors(form) {
-    qa('input, select', form).forEach(function (input) {
-      markError(input, null);
-    });
+    qa('input, select', form).forEach(function (input) { markError(input, null); });
     var general = formErrorNode(form);
-    if (general) {
-      setText(general, '');
-      hide(general);
-    }
+    if (general) { setText(general, ''); hide(general); }
     hide($('[data-error-summary]', form));
   }
 
   // GOV.UK style summary: one link per invalid field, focused so the list is announced first.
   function reportErrors(form, problems) {
-    problems.forEach(function (problem) {
-      markError(problem.input, problem.error);
-    });
-    var box = $('[data-error-summary]', form);
-    var list = box ? $('ul', box) : null;
-    if (!list) {
-      focusQuiet(problems[0].input);
-      return;
-    }
+    problems.forEach(function (problem) { markError(problem.input, problem.error); });
+    var box = $('[data-error-summary]', form), list = box ? $('ul', box) : null;
+    if (!list) { focusQuiet(problems[0].input); return; }
     while (list.firstChild) list.removeChild(list.firstChild);
     problems.forEach(function (problem) {
       var label = form.querySelector('label[for="' + problem.input.id + '"]');
-      var item = document.createElement('li');
-      var link = document.createElement('a');
+      var item = document.createElement('li'), link = document.createElement('a');
       link.href = '#' + problem.input.id;
       link.textContent = (label ? label.textContent + ': ' : '') + problem.error;
-      link.addEventListener('click', function (event) {
-        event.preventDefault();
-        focusQuiet(problem.input);
-      }, false);
-      item.appendChild(link);
-      list.appendChild(item);
+      link.addEventListener('click', function (event) { event.preventDefault(); focusQuiet(problem.input); }, false);
+      item.appendChild(link); list.appendChild(item);
     });
-    show(box);
-    focusQuiet(box);
+    show(box); focusQuiet(box);
   }
 
   function showFormError(form, text) {
     var general = formErrorNode(form);
-    if (general) {
-      setText(general, text);
-      show(general);
-      return true;
-    }
+    if (general) { setText(general, text); show(general); return true; }
     return false;
   }
 
-  function field(form, id) {
-    return form.querySelector('#' + id) || document.getElementById(id);
-  }
+  function field(form, id) { return form.querySelector('#' + id) || document.getElementById(id); }
 
   function bounds(input) {
-    var min = parseInt(attr(input, 'min'), 10);
-    var max = parseInt(attr(input, 'max'), 10);
+    var min = parseFloat(attr(input, 'min')), max = parseFloat(attr(input, 'max'));
     return { min: isNaN(min) ? null : min, max: isNaN(max) ? null : max };
   }
 
   function readValue(calc, input, options) {
     var raw = String(input.value === null || input.value === undefined ? '' : input.value);
     raw = calc && calc.normalizeDigits ? calc.normalizeDigits(raw) : M.digits.toLatin(raw);
-    raw = raw.replace(/[\s\u200c\u200e\u200f]/g, '');
+    raw = raw.replace(/[\s,\u060c\u066c\u200c\u200e\u200f]/g, '');
     if (!raw) return { error: message('calc.errRequired') };
     if (!/^\d+(\.\d+)?$/.test(raw)) return { error: message('calc.errNumber') };
     var value = parseFloat(raw);
@@ -426,9 +398,7 @@
     return { value: options && options.integer ? Math.round(value) : value };
   }
 
-  function resultNode() {
-    return $('[data-result]');
-  }
+  function resultNode() { return $('[data-result]'); }
 
   function showResult(result, value, unit) {
     if (!result) return;
@@ -443,8 +413,7 @@
 
   // Inputs changed after a result: keep the number but mark it as out of date.
   function markStale() {
-    var result = resultNode();
-    var body = result ? $('[data-result-body]', result) : null;
+    var result = resultNode(), body = result ? $('[data-result-body]', result) : null;
     if (!body || body.hasAttribute('hidden')) return;
     result.classList.add('is-stale');
     show($('[data-result-stale]', result));
@@ -457,22 +426,13 @@
   }
 
   function runSeverance(form, calc) {
-    var wage = field(form, 'sev-wage');
-    var years = field(form, 'sev-years');
-    var problems = [];
-
-    if (!wage || !years) {
-      showFormError(form, message('calc.errUnavailable'));
-      return;
-    }
+    var wage = field(form, 'sev-wage'), years = field(form, 'sev-years'), problems = [];
+    if (!wage || !years) { showFormError(form, message('calc.errUnavailable')); return; }
     var wageRead = readValue(calc, wage, { positive: true });
     var yearsRead = readValue(calc, years, { positive: true });
     if (wageRead.error) problems.push({ input: wage, error: wageRead.error });
     if (yearsRead.error) problems.push({ input: years, error: yearsRead.error });
-    if (problems.length) {
-      reportErrors(form, problems);
-      return;
-    }
+    if (problems.length) { reportErrors(form, problems); return; }
 
     var amount = calc.severance(wageRead.value, yearsRead.value);
     if (amount === null || amount === undefined || !isFinite(amount)) {
@@ -482,7 +442,12 @@
     }
     amount = Math.round(amount * 100) / 100;
     var text = calc.formatNumber ? calc.formatNumber(amount) : M.formatNumber(amount);
-    showResult(resultNode(), text || '', unitLabel(form));
+    if (!text) {
+      problems.push({ input: wage, error: message('calc.errRange') });
+      reportErrors(form, problems);
+      return;
+    }
+    showResult(resultNode(), text, unitLabel(form));
   }
 
   function jalaliValid(calc, year, month, day) {

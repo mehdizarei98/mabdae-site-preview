@@ -24,8 +24,8 @@
   var panelIds = panels.map(function (panel) { return panel.id; });
   var initialTarget = compact.matches ? hashIndex() : -1;
 
-  function headerHeight() {
-    return document.querySelector(compact.matches ? '.mtop' : '.nav').getBoundingClientRect().height;
+  function headerBottom() {
+    return document.querySelector(compact.matches ? '.mtop' : '.nav').getBoundingClientRect().bottom;
   }
   function dock() {
     if (compact.matches || selector.parentNode === host) return;
@@ -58,7 +58,7 @@
     next.setAttribute('href', '#s' + Math.min(items.length, index + 2));
   }
   function offset() {
-    return headerHeight() + (compact.matches ? bar.offsetHeight : 0) + parseFloat(getComputedStyle(workspace).rowGap);
+    return headerBottom() + (compact.matches ? bar.offsetHeight : 0) + parseFloat(getComputedStyle(workspace).rowGap);
   }
   function reveal(focus, instant) {
     if (current < 0) return;
@@ -66,6 +66,8 @@
     paint(current);
     var top = panels[current].getBoundingClientRect().top + window.scrollY - offset();
     if (compact.matches) {
+      bar.style.top = headerBottom() + 'px';
+      panels[current].style.scrollMarginTop = offset() + 'px';
       clearTimeout(idle);
       destination = Math.max(0, Math.min(document.documentElement.scrollHeight - window.innerHeight, top));
       top = destination;
@@ -114,7 +116,7 @@
       var index = 0, edge = offset() + 2;
       panels.forEach(function (panel, i) { if (panel.getBoundingClientRect().top <= edge) index = i; });
       paint(index);
-    } else if (current >= 0 && workspace.getBoundingClientRect().top <= headerHeight()) dock();
+    } else if (current >= 0 && workspace.getBoundingClientRect().top <= headerBottom()) dock();
   }
   function settle(event) {
     if (event && event.target !== window && event.target !== document) return;
@@ -132,7 +134,7 @@
   function sync() {
     if (compact.matches && selector.parentNode !== home) home.appendChild(selector);
     paint(Math.max(0, current));
-    if (compact.matches) bar.style.top = headerHeight() + 'px';
+    if (compact.matches) bar.style.top = headerBottom() + 'px';
     else bar.style.removeProperty('top');
     panels.forEach(function (panel, i) {
       // Native #sN navigation must land on the same section as compact JS navigation.
@@ -164,7 +166,15 @@
     // Hash navigation owns selection until the next user scroll gesture or tap.
     hashLocked = compact.matches && hashIndex() >= 0;
     if (compact.matches) initial = false;
+    sync();
     fromHash();
+    var wanted = hashIndex();
+    // Native fragments and announcement layout can finish after this hash task.
+    if (hashLocked) requestAnimationFrame(function () {
+      if (!hashLocked || hashIndex() !== wanted) return;
+      sync();
+      fromHash();
+    });
   });
   ['wheel', 'touchstart', 'keydown'].forEach(function (type) {
     window.addEventListener(type, function () {

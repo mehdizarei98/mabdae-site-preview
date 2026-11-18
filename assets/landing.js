@@ -10,6 +10,7 @@
   var phone = window.matchMedia('(max-width: 767.98px)');
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   var frame = 0;
+  var current = 0, initialized = false;
   var observer;
   function active(index) {
     tabs.forEach(function (tab, i) {
@@ -17,21 +18,33 @@
       else tab.removeAttribute('aria-current');
     });
   }
-  function update() {
+  function update(snap) {
     frame = 0;
     if (!desktop.matches) return;
     var range = wrap.offsetHeight - window.innerHeight;
-    var progress = Math.max(0, Math.min(1, (window.scrollY - (wrap.getBoundingClientRect().top + window.scrollY)) / range));
-    track.style.transform = 'translate3d(' + (progress * (panels.length - 1) * 100) + '%,0,0)';
-    active(Math.round(progress * (panels.length - 1)));
+    var target = range > 0 ? Math.max(0, Math.min(1, (window.scrollY - (wrap.getBoundingClientRect().top + window.scrollY)) / range)) : 0;
+    if (!initialized || snap === true || reduced.matches) {
+      current = target;
+      initialized = true;
+    } else {
+      current += (target - current) * 0.16;
+      if (Math.abs(target - current) < 0.0008) current = target;
+    }
+    track.style.transform = 'translate3d(' + (current * (panels.length - 1) * 100 * (document.documentElement.dir === 'ltr' ? -1 : 1)) + '%,0,0)';
+    active(Math.round(current * (panels.length - 1)));
+    if (current !== target) schedule();
   }
   function schedule() { if (!frame) frame = requestAnimationFrame(update); }
   function go(index, instant) {
     if (desktop.matches) {
       var top = wrap.getBoundingClientRect().top + window.scrollY;
-      window.scrollTo({ top: top + (wrap.offsetHeight - window.innerHeight) * index / (panels.length - 1), behavior: (instant || reduced.matches) ? 'instant' : 'smooth' });
+      var dest = top + (wrap.offsetHeight - window.innerHeight) * index / Math.max(1, panels.length - 1);
+      var jump = Boolean(instant || reduced.matches);
+      window.scrollTo({ top: dest, behavior: jump ? 'instant' : 'smooth' });
+      update(jump || Math.abs(window.scrollY - dest) <= 2);
     } else {
       panels[index].scrollIntoView({ behavior: (instant || reduced.matches) ? 'instant' : 'smooth', block: 'start' });
+      active(index);
     }
   }
   tabs.forEach(function (tab, i) { tab.addEventListener('click', function (event) { if (phone.matches) return; event.preventDefault(); go(i); }); });
@@ -46,6 +59,9 @@
     }
   });
   function setup() {
+    if (frame && typeof cancelAnimationFrame === 'function') cancelAnimationFrame(frame);
+    frame = 0;
+    initialized = false;
     wrap.classList.toggle('is-hscroll', desktop.matches);
     if (observer) observer.disconnect();
     track.style.transform = '';
@@ -58,9 +74,18 @@
       panels.forEach(function (panel) { observer.observe(panel); });
     }
   }
+  function followHash() {
+    if (!desktop.matches || !location.hash) return;
+    var target = document.getElementById(location.hash.slice(1));
+    var panel = target && target.closest('.tp-panel'), index = panels.indexOf(panel);
+    if (index < 0) return;
+    wrap.querySelector('.tp-stick').scrollLeft = 0;
+    go(index, true);
+  }
   window.addEventListener('scroll', schedule, { passive: true });
   window.addEventListener('resize', setup);
-  setup();
+  window.addEventListener('hashchange', followHash);
+  setup(); followHash();
 }());
 
 /* Phone topics stay in normal flow; only the chip row scrolls horizontally. */
@@ -142,7 +167,7 @@
   function sync() {
     if (phone.matches) {
       tabs.forEach(function (tab) { tab.classList.add('chip', 'chip-neutral'); });
-      bar.style.top = header.offsetHeight + 'px';
+      bar.style.top = header.getBoundingClientRect().bottom + 'px';
       panels.forEach(function (panel) { panel.style.scrollMarginTop = offset() + 'px'; });
       if (!enabled) followHash();
       enabled = true;
